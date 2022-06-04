@@ -11,7 +11,7 @@ def recursive_matrix_multipication_cost(matrix_dims):
     Solve the matrix multiplication problem: given the series of matrix A_0,A_1,...,A_(n-1), we wish to calculate their
     multiplication A_0*A_1*...*A_(n-1). Since matrix multiplication is associative, we can do so in many ways, that is
     locate the brackets in many positions. The cost of multiplying n*m matrix with an m*l matrix is n*m*l, so there is
-    a choices which is most efficient. This function finds the cost of the most efficient choice, although it does not
+    a choice which is most efficient. This function finds the cost of the most efficient choice, although it does not
     tell you what the choice is.
     :param matrix_dims: list of integers. The i'th matrix has dimensions matrix_dims[i], matrix_dims[i+1].
     :return: The cost of the optimal solution.
@@ -34,8 +34,7 @@ def recursive_matrix_multipication_cost(matrix_dims):
                                  matrix_dims[i] * matrix_dims[k + 1] * matrix_dims[j + 1]
             # The cost of breaking an expression to two expressions is the cost of each subexpression + cost of final
             # multiplication.
-        optimal_k = np.argmin(costs_per_k) + i
-        costs[i, j] = costs_per_k[optimal_k - i]
+        costs[i, j] = min(costs_per_k)
         return costs[i, j]
 
     return recursive_cost_calculation(0, n - 1)

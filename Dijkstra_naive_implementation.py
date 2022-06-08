@@ -3,6 +3,8 @@ As an exercise, implement Dijkstra as described in "Cracking the Coding Intervie
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
 
 
 # PriorityQueue naive implementation copied from: https://www.geeksforgeeks.org/priority-queue-in-python/.
@@ -74,10 +76,45 @@ def Dijkstra(lil_graph, weights_matrix, s, t):
     return path_from_t_to_s
 
 
+def plot_network(lil_graph, weights, shortest_path):
+    """
+    https://networkx.org/documentation/stable/auto_examples/drawing/plot_weighted_graph.html
+    """
+    G = nx.DiGraph()
+    for n in range(len(lil_graph)):
+        for m in lil_graph[n]:
+            G.add_edge(n, m, weight=weights[n, m])
+    epath = [(shortest_path[i], shortest_path[i + 1]) for i in range(len(shortest_path) - 1)]
+    pos = nx.spring_layout(G, seed=7)  # positions for all nodes - seed for reproducibility
+    nx.draw_networkx_nodes(G, pos)
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_edges(G, pos, edgelist=epath, width=2, edge_color='r')
+    nx.draw_networkx_labels(G, pos, font_size=20, font_family="sans-serif")
+    edge_labels = nx.get_edge_attributes(G, "weight")
+    nx.draw_networkx_edge_labels(G, pos, edge_labels)
+    ax = plt.gca()
+    ax.margins(0.08)
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+
 def main():
+    # Simplest test
     lil_graph = [[1], [0]]
     weights = np.array([[-1, 1], [1, -1]])
     print(Dijkstra(lil_graph, weights, 0, 1))
+
+    # More complicated test
+    a, b, c, d, e, f, g, h, i = 0, 1, 2, 3, 4, 5, 6, 7, 8
+    lil_graph = [[b, c], [d], [b, d], [a, g, h], [a, h, i], [b, g, i], [c, i], [f, g, c], []]
+    weights = np.zeros((len(lil_graph), len(lil_graph)))
+    for n in range(len(lil_graph)):
+        for m in lil_graph[n]:
+            weights[n, m] = np.random.randint(1, 10)
+    shortest_path = Dijkstra(lil_graph, weights, a, i)
+    plot_network(lil_graph, weights, shortest_path)
+
 
 if __name__ == '__main__':
     main()

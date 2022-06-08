@@ -60,8 +60,9 @@ def perform_monte_carlo(design_matrix, realizations=int(1e4), write_to_file=True
         if write_to_file:
             np.savetxt(MC_T_pdf_file_name, T.T)
     if visulize_T_pdf:
+        plt.figure()
         hist, bin_edges = np.histogram(T, 20, density=True)
-        plt.plot([(bin_edges[i] + bin_edges[i + 1])/2 for i in range(len(bin_edges) - 1)], hist, 'o')
+        plt.plot([(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(len(bin_edges) - 1)], hist, 'o')
         plt.xlabel('$T=max(t_i)$, for $n=' + str(n) + '$')
         plt.ylabel('PDF')
     return T
@@ -72,21 +73,35 @@ def is_outlier(design_matrix, dependent_variable, alpha, realizations=int(1e4), 
     n, dof = X.shape
     T = perform_monte_carlo(X, realizations, visulize_T_pdf=visualize)
     residuals_of_y = (np.identity(n) - hat_matrix(X)) @ y.T
-    T_of_y = np.max(np.abs(studentized(residuals=residuals_of_y, influence=calc_influence(X), dof=dof)))
-    index_in_T = np.where(T_of_y < T)[0][0]
+    ts = np.abs(studentized(residuals=residuals_of_y, influence=calc_influence(X), dof=dof))
+    outlier_index = np.argmax(ts)
+    T_of_y = ts[outlier_index]
     if visualize:
         plt.plot(2 * [T_of_y], [0, 1])
-        plt.show()
-    p_value = 1 - index_in_T / len(T)
-    return 1 - p_value > alpha, p_value
+    p_value = 1 - np.where(T_of_y < T)[0][0] / len(T)
+    return 1 - p_value > alpha, p_value, outlier_index
 
 
 def main():
-    n = 10
-    design_matrix = simplest_design_matrix([x for x in range(n)])
-    dependent_variable = np.array(range(n)) + np.random.normal(0, 1, n)
-    dependent_variable[int(n / 2)] += 6
-    print(is_outlier(design_matrix, dependent_variable, 0.95, realizations=int(1e5)))
+    n = 20
+    independent_variable = np.array(range(n))
+    design_matrix = simplest_design_matrix(independent_variable)
+    dependent_variable = independent_variable + np.random.normal(0, 1, n)
+    dependent_variable[int(n / 2)] += 4
+    test_result, p_value, outlier_index = is_outlier(design_matrix, dependent_variable, 0.95, realizations=int(1e5))
+
+    plt.figure()
+    plt.plot(independent_variable, dependent_variable, 'o')
+    I = [i for i in range(n) if (test_result or i != outlier_index)]
+    p = np.polyfit(independent_variable[I], dependent_variable[I], 1)
+    plt.plot(independent_variable, independent_variable, label='Original line without noise')
+    plt.plot(independent_variable, np.polyval(p, independent_variable),
+             label='Linear fit ignoring the outlier' if test_result else 'Linear fit')
+    if test_result:
+        plt.plot(independent_variable[outlier_index], dependent_variable[outlier_index], 'or',
+                 label='Outlier with confidence ' + str(int(100*(1 - p_value))) + '%')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
